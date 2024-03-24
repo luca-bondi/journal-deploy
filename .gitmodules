@@ -2,3 +2,7 @@
 	path = backend
 	url = https://github.com/luca-bondi/journal-backend.git
 	branch = dev
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/luca-bondi/journal-frontend.git
+	branch = dev
