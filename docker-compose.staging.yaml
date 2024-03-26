@@ -14,17 +14,24 @@ services:
       - "3001:3000"
     env_file:
       - frontend.env.staging
+    # command: npm start
+    depends_on:
+      - backend
+      - fief-server
 
   backend:
     restart: always
     build:
       context: backend/
-    command: uvicorn --host 0.0.0.0 --port 8000 journal_backend.main:app --root-path /api
+    # command: uvicorn --host 0.0.0.0 --port 8000 journal_backend.main:app --root-path /api --log-level debug
     image: journal-backend
     env_file:
       - backend.env.staging
     ports:
       - "8001:8000"
+    depends_on:
+      - fief-server
+      - mongodb
 
   fief-server:
     restart: always
