@@ -9,12 +9,17 @@ services:
     restart: always
     build:
       context: frontend/
+      args:
+        REACT_APP_VERSION: ${REACT_APP_VERSION}
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
+        REACT_APP_FIEF_URL: ${REACT_APP_FIEF_URL}
+        REACT_APP_FIEF_CLIENT_ID: ${REACT_APP_FIEF_CLIENT_ID}
     image: journal-frontend
     ports:
       - "3001:3000"
-    env_file:
-      - frontend.env.staging
-    command: npm start
+    # command: npm start
+    # env_file:
+    #   - frontend.env.staging
     depends_on:
       - backend
       - fief-server
