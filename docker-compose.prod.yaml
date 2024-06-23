@@ -1,0 +1,77 @@
+services:
+  mongodb:
+    restart: always
+    image: mongo:4.4.29
+    volumes:
+      - mongodb_data:/data/db
+
+  frontend:
+    restart: always
+    build:
+      context: frontend/
+      args:
+        REACT_APP_VERSION: ${REACT_APP_VERSION}
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
+        REACT_APP_FIEF_URL: ${REACT_APP_FIEF_URL}
+        REACT_APP_FIEF_CLIENT_ID: ${REACT_APP_FIEF_CLIENT_ID}
+    image: journal-frontend
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+      - fief-server
+
+  backend:
+    restart: always
+    build:
+      context: backend/
+    image: journal-backend
+    env_file:
+      - backend.env
+    ports:
+      - "8001:8000"
+    depends_on:
+      - fief-server
+      - mongodb
+
+  fief-server:
+    restart: always
+    image: ghcr.io/fief-dev/fief:latest
+    command: fief run-server
+    ports:
+      - 8081:8080
+    env_file:
+      - fief.env
+    depends_on:
+      - postgres
+      - redis
+
+  fief-worker:
+    restart: always
+    image: ghcr.io/fief-dev/fief:latest
+    command: fief run-worker -p 1 -t 1
+    env_file:
+      - fief.env
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    restart: always
+    image: postgres:alpine
+    env_file:
+      - postgres.env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    restart: always
+    image: redis:alpine
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+
+volumes:
+  mongodb_data:
+  redis-data:
+  postgres-data:
