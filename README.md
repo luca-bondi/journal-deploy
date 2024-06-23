@@ -1,7 +1,13 @@
 # SAJ deployment
 
+## Staging
 ```bash
-./deploy.sh
+./deploy.staging.sh
+```
+
+## Production
+```bash
+./deploy.prod.sh
 ```
 
 ## Secrets
