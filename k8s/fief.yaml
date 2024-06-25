@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fief-config
+data:
+  FIEF_CLIENT_ID: 5CL6XySLZIolLCExQpT6Ukb8mcQJ9ot9gadU-WRyuuE
+  PORT: "8080"
+  ROOT_DOMAIN: saj.bondibrown.com
+  FIEF_DOMAIN: fief.bondibrown.com
+  DATABASE_TYPE: POSTGRESQL
+  DATABASE_HOST: postgresql
+  DATABASE_PORT: "5432"
+  ENVIRONMENT: production
+  FORWARDED_ALLOW_IPS: "*"
+  REDIS_URL: redis://redis:6379
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: fief-server
+spec:
+  serviceName: "fief"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fief-server
+  template:
+    metadata:
+      labels:
+        app: fief-server
+    spec:
+      containers:
+      - name: fief-server
+        image: ghcr.io/fief-dev/fief:latest
+        command: ["fief", "run-server"]
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: fief-config
+        - secretRef:
+            name: fief-secret
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: fief-worker
+spec:
+  serviceName: "fief"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fief-worker
+  template:
+    metadata:
+      labels:
+        app: fief-worker
+    spec:
+      containers:
+      - name: fief-worker
+        image: ghcr.io/fief-dev/fief:latest
+        command: ["fief", "run-worker", "-p", "1", "-t", "1"]
+        envFrom:
+        - configMapRef:
+            name: fief-config
+        - secretRef:
+            name: fief-secret
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: fief-server-service
+spec:
+  selector:
+    app: fief-server
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fief-server-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - fief.bondibrown.com
+    secretName: fief-tls-secret
+  rules:
+  - host: fief.bondibrown.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: fief-server-service
+            port:
+              number: 80
