@@ -1,0 +1,121 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: saj-config
+data:
+  FIEF_BASE_URL: http://fief-server-service
+  FIEF_USER_URL: https://fief.bondibrown.com
+  FIEF_CLIENT_ID: 5CL6XySLZIolLCExQpT6Ukb8mcQJ9ot9gadU-WRyuuE
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saj-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: saj-backend
+  template:
+    metadata:
+      labels:
+        app: saj-backend
+    spec:
+      containers:
+      - name: saj-backend
+        image: unklb197/bondibrown:saj-backend-v1.0.0
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: saj-config
+        - secretRef:
+            name: saj-secret
+      imagePullSecrets:
+      - name: regcred
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: saj-backend-service
+spec:
+  selector:
+    app: saj-backend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saj-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: saj-frontend
+  template:
+    metadata:
+      labels:
+        app: saj-frontend
+    spec:
+      containers:
+      - name: saj-frontend
+        image: unklb197/bondibrown:saj-frontend-v1.0.0
+        ports:
+        - containerPort: 3000
+      imagePullSecrets:
+      - name: regcred
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: saj-frontend-service
+spec:
+  selector:
+    app: saj-frontend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: saj-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - saj.bondibrown.com
+    secretName: saj-tls
+  rules:
+  - host: saj.bondibrown.com
+    http:
+      paths:
+      - path: /api(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: saj-backend-service
+            port:
+              number: 80
+      - path: /(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: saj-frontend-service
+            port:
+              number: 80
