@@ -5,8 +5,9 @@ metadata:
 data:
   FIEF_CLIENT_ID: 5CL6XySLZIolLCExQpT6Ukb8mcQJ9ot9gadU-WRyuuE
   PORT: "8080"
-  ROOT_DOMAIN: saj.bondibrown.com
+  ROOT_DOMAIN: fief.bondibrown.com
   FIEF_DOMAIN: fief.bondibrown.com
+  FIEF_BASE_URL: https://fief.bondibrown.com
   DATABASE_TYPE: POSTGRESQL
   DATABASE_HOST: postgresql
   DATABASE_PORT: "5432"
@@ -14,13 +15,11 @@ data:
   FORWARDED_ALLOW_IPS: "*"
   REDIS_URL: redis://redis:6379
 ---
-
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: fief-server
 spec:
-  serviceName: "fief"
   replicas: 1
   selector:
     matchLabels:
@@ -45,11 +44,10 @@ spec:
 ---
 
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: fief-worker
 spec:
-  serviceName: "fief"
   replicas: 1
   selector:
     matchLabels:
