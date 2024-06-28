@@ -72,6 +72,8 @@ kubectl apply -f saj.yaml
 ```
 
 ## TODO
-- caching frontend
+- cache frontend
 - Backup MongoDB
 - Backup PostgreSQL
+- mail fief
+- HA setup

@@ -87,11 +87,10 @@ spec:
     targetPort: 3000
 
 ---
-
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: saj-ingress
+  name: saj-ingress-api
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
@@ -106,14 +105,62 @@ spec:
     http:
       paths:
       - path: /api(/|$)(.*)
-        pathType: ImplementationSpecific
+        pathType: Prefix
         backend:
           service:
             name: saj-backend-service
             port:
               number: 80
-      - path: /(.*)
-        pathType: ImplementationSpecific
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: saj-ingress-static
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/add-base-url: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      expires 1y;
+      add_header Cache-Control "public";
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - saj.bondibrown.com
+    secretName: saj-tls
+  rules:
+  - host: saj.bondibrown.com
+    http:
+      paths:
+      - path: /static
+        pathType: Prefix
+        backend:
+          service:
+            name: saj-frontend-service
+            port:
+              number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: saj-ingress-frontend
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/add-base-url: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header Cache-Control no-cache;
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - saj.bondibrown.com
+    secretName: saj-tls
+  rules:
+  - host: saj.bondibrown.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
         backend:
           service:
             name: saj-frontend-service
